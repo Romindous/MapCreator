@@ -1,0 +1,6 @@
+main: sdn.Romindous.Main
+name: Sedna
+version: 1.0
+author: Romindous
+api-version: 1.16
+load: POSTWORLD

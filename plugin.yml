@@ -1,0 +1,6 @@
+main: map.Romindous.Main
+name: MapCreator
+version: 1.0
+author: Romindous
+api-version: 1.18
+load: POSTWORLD

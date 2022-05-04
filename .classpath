@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry including="**/*.java" kind="src" output="target/classes" path="src">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-16">
+		<attributes>
+			<attribute name="module" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/Romindous/Downloads/serv2/libraries/io/papermc/paper/paper-api/1.18.2-R0.1-SNAPSHOT/paper-api-1.18.2-R0.1-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Romindous/Downloads/serv2/versions/1.18.2/paper-1.18.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Romindous/Downloads/serv2/libraries/net/kyori/adventure-api/4.10.0/adventure-api-4.10.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Romindous/Downloads/serv2/libraries/net/md-5/bungeecord-chat/1.16-R0.4-deprecated+build.6/bungeecord-chat-1.16-R0.4-deprecated+build.6.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Romindous/Downloads/serv2/libraries/io/netty/netty-all/4.1.68.Final/netty-all-4.1.68.Final.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Romindous/Downloads/serv2/libraries/com/mojang/authlib/3.3.39/authlib-3.3.39.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Romindous/Downloads/serv2/libraries/com/mojang/datafixerupper/4.1.27/datafixerupper-4.1.27.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Romindous/Downloads/serv2/libraries/com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Romindous/Downloads/serv2/libraries/com/google/guava/guava/31.0.1-jre/guava-31.0.1-jre.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Romindous/Downloads/serv2/libraries/net/kyori/examination-api/1.3.0/examination-api-1.3.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Romindous/Downloads/serv2/libraries/it/unimi/dsi/fastutil/8.5.6/fastutil-8.5.6.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Romindous/Downloads/serv2/plugins/worldedit-bukkit-7.2.10.jar"/>
+	<classpathentry kind="output" path="target/classes"/>
+</classpath>
