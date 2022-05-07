@@ -15,40 +15,54 @@ public enum TileType {
 	HGSTS(true, Material.SANDSTONE, 0, 1),
 	HGBOX(true, Material.SANDSTONE, 0, 2),
 	HGWALL(true, Material.SANDSTONE, 0, 3);
-	
-	public final boolean gnrt;
-	public final Material flr;
-	public final int[] ns;
+	//=-=-=-=-
+	//VERY IMPORTANT - besides (0, 0), there can be no other same-number noises, like (1,1), since that will create impossible cases
+	//=-=-=-=-
+	public final boolean generate;
+	public final Material floorMat;
+	public final int[] noise;
 	
 	public static final EnumSet<TileType> gns = getGens(EnumSet.allOf(TileType.class));
 	
-	private TileType(final boolean gnrt, final Material flr, final int... ns) {
-		this.ns = ns;
-		this.flr = flr;
-		this.gnrt = gnrt;
+	private TileType(final boolean generate, final Material floor, final int... noise) {
+		this.noise = noise;
+		this.floorMat = floor;
+		this.generate = generate;
+	}
+	
+	public boolean canPlaceNear(final TileType near, final int dst) {
+		final int[] fst = noise;
+		final int[] scd = near.noise;
+		final int len = fst.length;
+		if (len != scd.length) {
+			return false;
+		}
+		//Bukkit.getConsoleSender().sendMessage("comparing t-" + Arrays.toString(ns) + " to t-" + Arrays.toString(tt.ns) + " ");
+		int difference = 0;
+		for (int i = 0; i < len; i++) {
+			difference += Math.abs(fst[i] - scd[i]);
+		}
+		//Bukkit.getConsoleSender().sendMessage("df-" + df + " dst-" + dst);
+		return difference <= dst;
 	}
 	
 	private static EnumSet<TileType> getGens(final EnumSet<TileType> all) {
 		final Iterator<TileType> it = all.iterator();
 		while (it.hasNext()) {
-			if (!it.next().gnrt) it.remove();
+			if (!it.next().generate) it.remove();
 		}
 		return all;
 	}
-	
-	public boolean canPlaceNear(final int x, final int z, final TileType tt, final int dst) {
-		final int[] fst = ns;
-		final int[] scd = tt.ns;
-		final int ln = fst.length;
-		if (ln != scd.length) {
-			return false;
+
+	public static int getNoiseDiff() {
+		int min = 0;
+		int max = 0;
+		for (final TileType tile : gns) {
+			for (final int n : tile.noise) {
+				min = n < min ? n : min;
+				max = n > max ? n : max;
+			}
 		}
-		//Bukkit.getConsoleSender().sendMessage("comparing t-" + Arrays.toString(ns) + " to t-" + Arrays.toString(tt.ns) + " ");
-		int df = 0;
-		for (int i = 0; i < ln; i++) {
-			df += Math.abs(fst[i] - scd[i]);
-		}
-		//Bukkit.getConsoleSender().sendMessage("df-" + df + " dst-" + dst);
-		return df <= dst;
+		return max - min + 1;
 	}
 }

@@ -8,6 +8,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map.Entry;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -34,7 +35,8 @@ public class MapBuilder {
 	private BlockVector3 mapDims;
 	private BlockVector3 cellDims;
 	
-	public static final int mxFll = 5;
+	public static final int maxCheckDist = TileType.getNoiseDiff();
+	public static final int encodeBits = 6;
 	
 	public MapBuilder(final String nm, final BlockVector3 mapDims, final BlockVector3 cellDims, final boolean ceil) {
 		this.nm = nm;
@@ -69,183 +71,178 @@ public class MapBuilder {
 		return true;
 	}
 	
-	private int[] buildFloor(final int dX, final int dZ, final Location loc, final HashMap<Integer, TileType> tls, final boolean lst, final Material ceil) {
-		final LinkedList<Integer> slts = new LinkedList<>();
-		for (int x = 0; x < dX; x++) {
-			for (int z = 0; z < dZ; z++) {
-				slts.add(encd(x, z));
+	private int[] buildFloor(final int lenX, final int widZ, final Location loc, final HashMap<Integer, TileType> tiles, final boolean isTopFloor, final Material ceiling) {
+		final LinkedList<Integer> cells = new LinkedList<>();
+		for (int x = 0; x < lenX; x++) {
+			for (int z = 0; z < widZ; z++) {
+				cells.add(encd(x, z));
 				final Block b = loc.clone().add(x * 5, cellDims.getY() - 1, z * 5).getBlock();
 				//ceiling
 				if (this.ceil) {
 					for (int xx = 0; xx < cellDims.getX(); xx++) {
 						for (int zz = 0; zz < cellDims.getZ(); zz++) {
-							b.getRelative(xx, 0, zz).setType(ceil);
+							b.getRelative(xx, 0, zz).setType(ceiling);
 						}
 					}
 				}
 				//presets
-				if (x == 0 || x == dX - 1) {
-					tls.put(encd(x, z), TileType.WALL);
-				} else if (z == 0 || z == dZ - 1) {
-					tls.put(encd(x, z), TileType.WALL);
-				} else if (x == dX / 2 && z > 0 && z < dZ) {
+				if (x == 0 || x == lenX - 1) {
+					tiles.put(encd(x, z), TileType.WALL);
+				} else if (z == 0 || z == widZ - 1) {
+					tiles.put(encd(x, z), TileType.WALL);
+				} else if (x == lenX / 2 && z > 0 && z < widZ) {
 					//tls.put(encd(x, z), TileType.OPEN);
 				}
 			}
 		}
-		Collections.shuffle(slts);
+		Collections.shuffle(cells);
 		
 		//upstairs stairs
-		final int[] ups;
-		if (lst) {
-			ups = new int[0];
+		final int[] upStairCords;
+		if (isTopFloor) {
+			upStairCords = new int[0];
 		} else {
 			while (true) {
-				final int ux = Main.sr.nextInt(dX >> 2) + 1, uz = Main.sr.nextInt(dZ >> 2) + 1;
-				if (tls.get(encd((dX >> 1) + ux, (dZ >> 1) + uz)) != null) continue;
-				if (dX * dZ > 160) {
-					ups = new int[] {
-						encd((dX >> 1) + ux, (dZ >> 1) + uz),
-						encd((dX >> 1) - ux, (dZ >> 1) + uz),
-						encd((dX >> 1) + ux, (dZ >> 1) - uz),
-						encd((dX >> 1) - ux, (dZ >> 1) - uz)
+				final int ux = Main.sRnd.nextInt(lenX >> 2) + 1, uz = Main.sRnd.nextInt(widZ >> 2) + 1;
+				if (tiles.get(encd((lenX >> 1) + ux, (widZ >> 1) + uz)) != null) continue;
+				if (lenX * widZ > 160) {
+					upStairCords = new int[] {
+						encd((lenX >> 1) + ux, (widZ >> 1) + uz),
+						encd((lenX >> 1) - ux, (widZ >> 1) + uz),
+						encd((lenX >> 1) + ux, (widZ >> 1) - uz),
+						encd((lenX >> 1) - ux, (widZ >> 1) - uz)
 					};
 				} else {
-					ups = new int[] {
-						encd((dX >> 1) - ux, (dZ >> 1) + uz),
-						encd((dX >> 1) + ux, (dZ >> 1) - uz)
+					upStairCords = new int[] {
+						encd((lenX >> 1) - ux, (widZ >> 1) + uz),
+						encd((lenX >> 1) + ux, (widZ >> 1) - uz)
 					};
 				}
-				for (final int c : ups) {
-					tls.put(c, TileType.HGBOX);
+				for (final int c : upStairCords) {
+					tiles.put(c, TileType.UPSTS);
 				}
 				break;
 			}
 		}
 		
 		//filling in the rest
-		for (final int crd : slts) {
-			if (tls.get(crd) != null) continue; 
-			final int Z = crd >> 6, X = crd - (Z << 6);
-			final EnumSet<TileType> psbl = EnumSet.copyOf(TileType.gns);
-			for (int x = 0; x < dX; x++) {
-				for (int z = 0; z < dZ; z++) {
-					final int d = Math.abs(X - x) + Math.abs(Z - z);
-					if (d < mxFll) {
-						final TileType tl = tls.get(encd(x, z));
-						if (tl != null) {
-							final Iterator<TileType> it = psbl.iterator();
-							while (it.hasNext()) {
-								final TileType ttt = it.next();
-								if (!tl.canPlaceNear(x, z, ttt, d)) {
-									//Bukkit.getConsoleSender().sendMessage("excluding-" + ttt.toString() + " d-" + d);
-									it.remove();
-								}
-							}
+		for (final int coords : cells) {
+			if (tiles.get(coords) != null) continue; 
+			final int Z = coords >> encodeBits, X = coords - (Z << encodeBits);
+			final EnumSet<TileType> possible = EnumSet.copyOf(TileType.gns);
+			for (final Entry<Integer, TileType> en : tiles.entrySet()) {
+				final int z = en.getKey() >> encodeBits, x = en.getKey() - (z << encodeBits);
+				final int d = Math.abs(X - x) + Math.abs(Z - z);
+				if (d < maxCheckDist) {
+					final TileType tileAtXZ = en.getValue();
+					final Iterator<TileType> it = possible.iterator();
+					while (it.hasNext()) {
+						final TileType possibility = it.next();
+						if (!tileAtXZ.canPlaceNear(possibility, d)) {
+							//Bukkit.getConsoleSender().sendMessage("excluding-" + ttt.toString() + " d-" + d);
+							it.remove();
 						}
 					}
 				}
 			}
 			
-			if (psbl.isEmpty()) {
-				return new int[0];
+			if (possible.isEmpty()) {
+				return new int[0];//fallback
 			}
-			final TileType tt = (TileType) rndElmt(psbl.toArray());
 			//Bukkit.getConsoleSender().sendMessage("final-" + tt.toString());
-			tls.put(crd, tt);
+			tiles.put(coords, (TileType) rndElmt(possible.toArray()));
 		}
 		
-		final EditSession ess = Main.wep.newEditSessionBuilder().world(BukkitAdapter.adapt(loc.getWorld())).maxBlocks(-1).build();
-		ess.enableStandardMode();
-		for (final Integer in : tls.keySet()) {
-			final int z = in >> 6, x = in - (z << 6);
-			pasteSet(x, z, tls, loc.clone(), ess);
+		final EditSession session = Main.WEPlugin.newEditSessionBuilder().world(BukkitAdapter.adapt(loc.getWorld())).maxBlocks(-1).build();
+		session.enableStandardMode();
+		for (final Integer in : tiles.keySet()) {
+			final int z = in >> encodeBits, x = in - (z << encodeBits);
+			pasteSet(x, z, tiles, loc.clone(), session);
 		}
-		ess.close();
-		return ups;
+		session.close();
+		return upStairCords;
 	}
 
-	public void pasteSet(final int X, final int Z, final HashMap<Integer, TileType> tls, final Location org, final EditSession ess) {
-		final TileType[] ard = new TileType[4];
-		TileType tt = tls.get(encd(X + 1, Z));
-		ard[0] = tt == null ? TileType.OPEN : tt;
-		tt = tls.get(encd(X, Z + 1));
-		ard[1] = tt == null ? TileType.OPEN : tt;
-		tt = tls.get(encd(X - 1, Z));
-		ard[2] = tt == null ? TileType.OPEN : tt;
-		tt = tls.get(encd(X, Z - 1));
-		ard[3] = tt == null ? TileType.OPEN : tt;
+	public void pasteSet(final int X, final int Z, final HashMap<Integer, TileType> tiles, final Location origin, final EditSession session) {
+		final TileType[] around = new TileType[4];
+		TileType tile = tiles.get(encd(X + 1, Z));
+		around[0] = tile == null ? TileType.OPEN : tile;
+		tile = tiles.get(encd(X, Z + 1));
+		around[1] = tile == null ? TileType.OPEN : tile;
+		tile = tiles.get(encd(X - 1, Z));
+		around[2] = tile == null ? TileType.OPEN : tile;
+		tile = tiles.get(encd(X, Z - 1));
+		around[3] = tile == null ? TileType.OPEN : tile;
 		
-		tt = tls.get(encd(X, Z));
-		placeRotateSet(tt, ard, org.add(X * cellDims.getX(), 0d, Z * cellDims.getZ()), ess);
+		placeRotateSet(tiles.get(encd(X, Z)), around, origin.add(X * cellDims.getX(), 0d, Z * cellDims.getZ()), session);
 	}
 
-	private void placeRotateSet(final TileType tt, final TileType[] ard, final Location loc, final EditSession ess) {
-		for (final TileSet ts : TileSet.values()) {//for every set
-			if (ts.org == tt) {
-				final int ln = ard.length;
-				sts : for (int i = 0; i < ln; i++) {//for every possible rotation
+	private void placeRotateSet(final TileType tile, final TileType[] around, final Location loc, final EditSession session) {
+		for (final TileSet set : TileSet.values()) {//for every set
+			if (set.original == tile) {
+				final int ln = around.length;//usually 4
+				sts : for (int rotation = 0; rotation < ln; rotation++) {//for every possible rotation
 					for (int j = 0; j < ln; j++) {//check if array matches set
-						if (!arrCntns(ts.frm[j], ard[j])) {//rotate by 1 if not
-							final TileType t = ard[0];
-							for (int l = 1; l < ln; l++) {//rotating
-								ard[l - 1] = ard[l];
+						if (!arrayContains(set.form[j], around[j])) {//rotate by 1 if not
+							final TileType first_Last = around[0];
+							for (int i = 1; i < ln; i++) {//rotating
+								around[i - 1] = around[i];
 							}
-							ard[ln - 1] = t;
+							around[ln - 1] = first_Last;
 							continue sts;
 						}
 					}
 					//getServer().getConsoleSender().sendMessage("\nloc-" + loc.toString() + ",\nType-" + tt.toString() + ", Set-" + ts.toString() + ", Rot-" + i);
-					placeWESet(ts, ts.rndmRtt ? Main.sr.nextInt(4) : i, loc, ess);
+					placeWESet(set, set.rotateRnd ? Main.sRnd.nextInt(4) : rotation, loc, session);
 					return;
 				}
 			}
 		}
-		Bukkit.getConsoleSender().sendMessage("loc-" + loc.toString() + ",\nType-" + tt.toString() + " not placed");
+		Bukkit.getConsoleSender().sendMessage("loc-" + loc.toString() + ",\nType-" + tile.toString() + " not placed");
 		//placeWESet(TileSet.OPEN, 0, loc, ess);
 	}
 
-	private <G> boolean arrCntns(final G[] frm, final G ns) {
-		for (final G g : frm) {
-			if (g.equals(ns)) return true; 
+	private <G> boolean arrayContains(final G[] array, final G elem) {
+		for (final G g : array) {
+			if (g.equals(elem)) return true; 
 		}
 		return false;
 	}
 
-	private void placeWESet(final TileSet ts, final int rt, final Location loc, final EditSession ess) {
-		final File fl = new File(Bukkit.getPluginsFolder().getAbsolutePath() + "\\WorldEdit\\schematics\\" + rndElmt(ts.schms) + ".schem");
+	private void placeWESet(final TileSet set, final int rotation, final Location loc, final EditSession session) {
+		final File fl = new File(Bukkit.getPluginsFolder().getAbsolutePath() + "\\WorldEdit\\schematics\\" + rndElmt(set.schems) + ".schem");
 		try {
 			if (fl.exists()) {
 				final Block b = loc.getBlock();
-				for (int y = ts.dY - 1; y >= 0; y--) {
+				for (int y = set.height - 1; y >= 0; y--) {
 					for (int x = cellDims.getX() - 1; x >= 0; x--) {
 						for (int z = cellDims.getZ() - 1; z >= 0; z--) {
-							b.getRelative(x,y,z).setType(ts.org.flr);
+							b.getRelative(x,y,z).setType(set.original.floorMat);
 						}
 					}
 				}
-				final Clipboard cl = ClipboardFormats.findByFile(fl).getReader(new FileInputStream(fl)).read();
+				final Clipboard clip = ClipboardFormats.findByFile(fl).getReader(new FileInputStream(fl)).read();
 				//cl.getRegion().contract(null);
-				final ClipboardHolder hld = new ClipboardHolder(cl);
-				switch (rt) {
+				final ClipboardHolder holder = new ClipboardHolder(clip);
+				switch (rotation) {
 				case 3:
 					loc.add(0d, 0d, cellDims.getZ() - 1);
-					hld.setTransform(new AffineTransform().rotateY(90d));
+					holder.setTransform(new AffineTransform().rotateY(90d));
 					break;
 				case 2:
 					loc.add(cellDims.getX() - 1, 0d, cellDims.getZ() - 1);
-					hld.setTransform(new AffineTransform().rotateY(180d));
+					holder.setTransform(new AffineTransform().rotateY(180d));
 					break;
 				case 1:
 					loc.add(cellDims.getX() - 1, 0d, 0d);
-					hld.setTransform(new AffineTransform().rotateY(270d));
+					holder.setTransform(new AffineTransform().rotateY(270d));
 					break;
 				default:
 					break;
 				}
-				Operations.complete(hld.createPaste(ess).to(BukkitAdapter.asBlockVector(loc).add(0, ts.dY, 0)).ignoreAirBlocks(true).build());
+				Operations.complete(holder.createPaste(session).to(BukkitAdapter.asBlockVector(loc).add(0, set.height, 0)).ignoreAirBlocks(true).build());
 			} else {
-				Bukkit.getConsoleSender().sendMessage("loc-" + loc.toString() + ",\nType-" + ts.toString() + " not placed");
+				Bukkit.getConsoleSender().sendMessage("loc-" + loc.toString() + ",\nType-" + set.toString() + " not placed");
 			}
 		} catch (WorldEditException | IOException e) {
 			e.printStackTrace();
@@ -254,10 +251,10 @@ public class MapBuilder {
 	
 	@SuppressWarnings("unchecked")
 	public static <G> G rndElmt(final G... arr) {
-		return arr[Main.sr.nextInt(arr.length)];
+		return arr[Main.sRnd.nextInt(arr.length)];
 	}
 	
 	public static int encd(final int x, final int z) {
-		return x + (z << 6);
+		return x + (z << encodeBits);
 	}
 }

@@ -49,26 +49,26 @@ public enum TileSet {
 	MOST_HGWALL(TileType.HGWALL, 	mkArry(new int[] {1,1,1,0}, new TileType[] {TileType.HGSTS, TileType.HGBOX}, new TileType[] {TileType.HGWALL}), 				false, 3, "mostwall"),
 	FULL_HGWALL(TileType.HGWALL, 	mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.HGWALL}}), 												true, 3, "fullwall");
 	
-	public final TileType[][] frm;
-	public final boolean rndmRtt;
-	public final TileType org;
-	public final String[] schms;
-	public final int dY;
+	public final TileType[][] form;	//being the 4 surrounding tiles
+	public final boolean rotateRnd;	//if not "connected" to anything
+	public final TileType original;
+	public final String[] schems;
+	public final int height;		//height of the tile placement
 	
 	private TileSet(final TileType org, final TileType[][] frm, final boolean rndmRtt, final int dY, final String... schms) {
-		this.rndmRtt = rndmRtt;
-		this.schms = schms;
-		this.frm = frm;
-		this.org = org;
-		this.dY = dY;
+		this.rotateRnd = rndmRtt;
+		this.schems = schms;
+		this.form = frm;
+		this.original = org;
+		this.height = dY;
 	}
 	
-	private static TileType[][] mkArry(final int[] which, final TileType[]... tps) {
-		final TileType[][] rt = new TileType[which.length][];
-		for (int j = 0; j < rt.length; j++) {
-			rt[j] = tps[which[j]];
+	private static TileType[][] mkArry(final int[] which, final TileType[]... tilesArr) {
+		final TileType[][] finalForm = new TileType[which.length][];
+		for (int j = 0; j < finalForm.length; j++) {
+			finalForm[j] = tilesArr[which[j]];
 		}
 		
-		return rt;
+		return finalForm;
 	}
 }
