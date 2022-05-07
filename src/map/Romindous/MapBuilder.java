@@ -11,30 +11,39 @@ import java.util.LinkedList;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.math.transform.AffineTransform;
 import com.sk89q.worldedit.session.ClipboardHolder;
+
 import map.Romindous.Enums.TileSet;
 import map.Romindous.Enums.TileType;
 
 public class MapBuilder {
 	
 	public final String nm;
+	public boolean ceil;
 	private BlockVector3 mapDims;
 	private BlockVector3 cellDims;
 	
-	public static final int mxFll = 3;
+	public static final int mxFll = 5;
 	
-	public MapBuilder(final String nm, final BlockVector3 mapDims, final BlockVector3 cellDims) {
+	public MapBuilder(final String nm, final BlockVector3 mapDims, final BlockVector3 cellDims, final boolean ceil) {
 		this.nm = nm;
 		this.mapDims = mapDims;
 		this.cellDims = cellDims;
+	}
+	
+	public void setCeiling(final boolean ceil) {
+		this.ceil = ceil;
 	}
 	
 	public void setMapDims(final int x, final int y, final int z) {
@@ -54,60 +63,64 @@ public class MapBuilder {
 			for (final int c : uts) {
 				tls.put(c, TileType.DWNSTS);
 			}
-			uts = buildFloor(dX, dZ, loc, tls, f == mapDims.getY() - 1);
+			uts = buildFloor(dX, dZ, loc, tls, f == mapDims.getY() - 1, Material.SMOOTH_SANDSTONE);
 			loc.add(0d, cellDims.getY(), 0d);
 		}
 		return true;
 	}
 	
-	private int[] buildFloor(final int dX, final int dZ, final Location loc, final HashMap<Integer, TileType> tls, final boolean lst) {
+	private int[] buildFloor(final int dX, final int dZ, final Location loc, final HashMap<Integer, TileType> tls, final boolean lst, final Material ceil) {
 		final LinkedList<Integer> slts = new LinkedList<>();
 		for (int x = 0; x < dX; x++) {
 			for (int z = 0; z < dZ; z++) {
 				slts.add(encd(x, z));
-			}
-		}
-		Collections.shuffle(slts);
-		
-		//presets
-		for (int x = 0; x < dX; x++) {
-			for (int z = 0; z < dZ; z++) {
+				final Block b = loc.clone().add(x * 5, cellDims.getY() - 1, z * 5).getBlock();
+				//ceiling
+				if (this.ceil) {
+					for (int xx = 0; xx < cellDims.getX(); xx++) {
+						for (int zz = 0; zz < cellDims.getZ(); zz++) {
+							b.getRelative(xx, 0, zz).setType(ceil);
+						}
+					}
+				}
+				//presets
 				if (x == 0 || x == dX - 1) {
 					tls.put(encd(x, z), TileType.WALL);
 				} else if (z == 0 || z == dZ - 1) {
 					tls.put(encd(x, z), TileType.WALL);
 				} else if (x == dX / 2 && z > 0 && z < dZ) {
-					tls.put(encd(x, z), TileType.OPEN);
+					//tls.put(encd(x, z), TileType.OPEN);
 				}
 			}
 		}
+		Collections.shuffle(slts);
 		
 		//upstairs stairs
 		final int[] ups;
-		while (true) {
-			if (lst) {
-				ups = new int[0];
+		if (lst) {
+			ups = new int[0];
+		} else {
+			while (true) {
+				final int ux = Main.sr.nextInt(dX >> 2) + 1, uz = Main.sr.nextInt(dZ >> 2) + 1;
+				if (tls.get(encd((dX >> 1) + ux, (dZ >> 1) + uz)) != null) continue;
+				if (dX * dZ > 160) {
+					ups = new int[] {
+						encd((dX >> 1) + ux, (dZ >> 1) + uz),
+						encd((dX >> 1) - ux, (dZ >> 1) + uz),
+						encd((dX >> 1) + ux, (dZ >> 1) - uz),
+						encd((dX >> 1) - ux, (dZ >> 1) - uz)
+					};
+				} else {
+					ups = new int[] {
+						encd((dX >> 1) - ux, (dZ >> 1) + uz),
+						encd((dX >> 1) + ux, (dZ >> 1) - uz)
+					};
+				}
+				for (final int c : ups) {
+					tls.put(c, TileType.HGBOX);
+				}
 				break;
 			}
-			final int ux = Main.sr.nextInt((dX >> 2) + 1), uz = Main.sr.nextInt((dZ >> 2) + 1);
-			if (tls.get(encd((dX >> 1) + ux, (dZ >> 1) + uz)) != null) continue;
-			if (dX * dZ > 160) {
-				ups = new int[] {
-					encd((dX >> 1) + ux, (dZ >> 1) + uz),
-					encd((dX >> 1) - ux, (dZ >> 1) + uz),
-					encd((dX >> 1) + ux, (dZ >> 1) - uz),
-					encd((dX >> 1) - ux, (dZ >> 1) - uz)
-				};
-			} else {
-				ups = new int[] {
-					encd((dX >> 1) - ux, (dZ >> 1) + uz),
-					encd((dX >> 1) + ux, (dZ >> 1) - uz)
-				};
-			}
-			for (final int c : ups) {
-				tls.put(c, TileType.UPSTS);
-			}
-			break;
 		}
 		
 		//filling in the rest
@@ -115,7 +128,6 @@ public class MapBuilder {
 			if (tls.get(crd) != null) continue; 
 			final int Z = crd >> 6, X = crd - (Z << 6);
 			final EnumSet<TileType> psbl = EnumSet.copyOf(TileType.gns);
-			//getServer().getConsoleSender().sendMessage("x-" + X + " z-" + Z + " " + psbl.toString());
 			for (int x = 0; x < dX; x++) {
 				for (int z = 0; z < dZ; z++) {
 					final int d = Math.abs(X - x) + Math.abs(Z - z);
@@ -124,7 +136,9 @@ public class MapBuilder {
 						if (tl != null) {
 							final Iterator<TileType> it = psbl.iterator();
 							while (it.hasNext()) {
-								if (Math.abs(it.next().ns - tl.ns) > d) {
+								final TileType ttt = it.next();
+								if (!tl.canPlaceNear(x, z, ttt, d)) {
+									//Bukkit.getConsoleSender().sendMessage("excluding-" + ttt.toString() + " d-" + d);
 									it.remove();
 								}
 							}
@@ -132,7 +146,13 @@ public class MapBuilder {
 					}
 				}
 			}
-			tls.put(crd, (TileType) rndElmt(psbl.toArray()));
+			
+			if (psbl.isEmpty()) {
+				return new int[0];
+			}
+			final TileType tt = (TileType) rndElmt(psbl.toArray());
+			//Bukkit.getConsoleSender().sendMessage("final-" + tt.toString());
+			tls.put(crd, tt);
 		}
 		
 		final EditSession ess = Main.wep.newEditSessionBuilder().world(BukkitAdapter.adapt(loc.getWorld())).maxBlocks(-1).build();
@@ -193,10 +213,20 @@ public class MapBuilder {
 	}
 
 	private void placeWESet(final TileSet ts, final int rt, final Location loc, final EditSession ess) {
-		final File fl = new File(Bukkit.getPluginsFolder().getAbsolutePath() + "\\WorldEdit\\schematics\\" + ts.schm + ".schem");
+		final File fl = new File(Bukkit.getPluginsFolder().getAbsolutePath() + "\\WorldEdit\\schematics\\" + rndElmt(ts.schms) + ".schem");
 		try {
 			if (fl.exists()) {
-				final ClipboardHolder hld = new ClipboardHolder(ClipboardFormats.findByFile(fl).getReader(new FileInputStream(fl)).read());
+				final Block b = loc.getBlock();
+				for (int y = ts.dY - 1; y >= 0; y--) {
+					for (int x = cellDims.getX() - 1; x >= 0; x--) {
+						for (int z = cellDims.getZ() - 1; z >= 0; z--) {
+							b.getRelative(x,y,z).setType(ts.org.flr);
+						}
+					}
+				}
+				final Clipboard cl = ClipboardFormats.findByFile(fl).getReader(new FileInputStream(fl)).read();
+				//cl.getRegion().contract(null);
+				final ClipboardHolder hld = new ClipboardHolder(cl);
 				switch (rt) {
 				case 3:
 					loc.add(0d, 0d, cellDims.getZ() - 1);
@@ -213,7 +243,7 @@ public class MapBuilder {
 				default:
 					break;
 				}
-				Operations.complete(hld.createPaste(ess).to(BukkitAdapter.asBlockVector(loc)).ignoreAirBlocks(true).build());
+				Operations.complete(hld.createPaste(ess).to(BukkitAdapter.asBlockVector(loc).add(0, ts.dY, 0)).ignoreAirBlocks(true).build());
 			} else {
 				Bukkit.getConsoleSender().sendMessage("loc-" + loc.toString() + ",\nType-" + ts.toString() + " not placed");
 			}

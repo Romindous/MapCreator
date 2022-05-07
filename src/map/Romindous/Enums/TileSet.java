@@ -2,37 +2,65 @@ package map.Romindous.Enums;
 
 public enum TileSet {
 	
-	FULL_WALL(	TileType.WALL, 		mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.WALL}}), 															"fullwall", true),
-	MOST_WALL(	TileType.WALL, 		mkArry(new int[] {0,0,0,1}, new TileType[] {TileType.WALL}, new TileType[] {TileType.OPEN, TileType.UPSTS}), 								"mostwall", false),
-	HALF_WALL(	TileType.WALL, 		mkArry(new int[] {0,0,1,1}, new TileType[] {TileType.WALL}, new TileType[] {TileType.OPEN, TileType.UPSTS}), 								"halfwall", false),
-	CRSS_WALL(	TileType.WALL, 		mkArry(new int[] {0,1,0,1}, new TileType[] {TileType.WALL}, new TileType[] {TileType.OPEN, TileType.UPSTS}), 								"crsswall", false),
-	SOME_WALL(	TileType.WALL, 		mkArry(new int[] {0,1,1,1}, new TileType[] {TileType.WALL}, new TileType[] {TileType.OPEN, TileType.UPSTS}), 								"somewall", false),
-	PILLAR(		TileType.WALL, 		mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.OPEN, TileType.UPSTS}}), 											"pillar", true),
-	OPEN(		TileType.OPEN, 		mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.OPEN, TileType.WALL, TileType.UPSTS, TileType.BOX, TileType.DWNSTS}}), "open", true),
-	OPEN_BOX(	TileType.BOX, 		mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.OPEN, TileType.DWNSTS, TileType.UPSTS}}), 							"box", true),
-	SOME_BOX(	TileType.BOX, 		mkArry(new int[] {0,1,1,1}, new TileType[] {TileType.BOX}, new TileType[] {TileType.OPEN, TileType.UPSTS, TileType.DWNSTS}), 				"somebox", false),
-	HALF_BOX(	TileType.BOX, 		mkArry(new int[] {0,0,1,1}, new TileType[] {TileType.BOX}, new TileType[] {TileType.OPEN, TileType.UPSTS, TileType.DWNSTS}), 				"halfbox", false),
-	CRSS_BOX(	TileType.BOX, 		mkArry(new int[] {0,1,0,1}, new TileType[] {TileType.BOX}, new TileType[] {TileType.OPEN, TileType.UPSTS, TileType.DWNSTS}), 				"crssbox", false),
-	MOST_BOX(	TileType.BOX, 		mkArry(new int[] {0,0,0,1}, new TileType[] {TileType.BOX}, new TileType[] {TileType.OPEN, TileType.UPSTS, TileType.DWNSTS}), 				"mostbox", false),
-	FULL_BOX(	TileType.BOX, 		mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.BOX, TileType.UPSTS}}), 												"fullbox", true),
-	NONE_UP(	TileType.UPSTS, 	mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.OPEN, TileType.DWNSTS}}), 											"noneup", true),
-	SOME_UP(	TileType.UPSTS, 	mkArry(new int[] {0,0,0,1}, new TileType[] {TileType.BOX, TileType.UPSTS}, new TileType[] {TileType.OPEN, TileType.DWNSTS}), 				"someup", false),
-	HALF_UP(	TileType.UPSTS, 	mkArry(new int[] {0,0,1,1}, new TileType[] {TileType.BOX, TileType.UPSTS}, new TileType[] {TileType.OPEN, TileType.DWNSTS}), 				"halfup", false),
-	CRSS_UP(	TileType.UPSTS, 	mkArry(new int[] {0,1,0,1}, new TileType[] {TileType.BOX, TileType.UPSTS}, new TileType[] {TileType.OPEN, TileType.DWNSTS}), 				"crssup", false),
-	MOST_UP(	TileType.UPSTS, 	mkArry(new int[] {0,1,1,1}, new TileType[] {TileType.BOX, TileType.UPSTS}, new TileType[] {TileType.OPEN, TileType.DWNSTS}), 				"mostup", false),
-	FULL_UP(	TileType.UPSTS, 	mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.OPEN, TileType.DWNSTS}}), 											"fullup", true),
-	DOWN(		TileType.DWNSTS, 	mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.OPEN, TileType.DWNSTS, TileType.UPSTS, TileType.BOX}}), 				"down", true);
+	FULL_WALL(	TileType.WALL, 		mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.WALL}}), 												true, 0, "fullwall"),
+	MOST_WALL(	TileType.WALL, 		mkArry(new int[] {0,0,0,1}, new TileType[] {TileType.WALL}, new TileType[] {TileType.OPEN, TileType.UPSTS}), 					false, 0, "mostwall"),
+	HALF_WALL(	TileType.WALL, 		mkArry(new int[] {0,0,1,1}, new TileType[] {TileType.WALL}, new TileType[] {TileType.OPEN, TileType.UPSTS}), 					false, 0, "halfwall"),
+	CRSS_WALL(	TileType.WALL, 		mkArry(new int[] {0,1,0,1}, new TileType[] {TileType.WALL}, new TileType[] {TileType.OPEN, TileType.UPSTS}), 					false, 0, "crsswall"),
+	SOME_WALL(	TileType.WALL, 		mkArry(new int[] {0,1,1,1}, new TileType[] {TileType.WALL}, new TileType[] {TileType.OPEN, TileType.UPSTS}), 					false, 0, "somewall"),
+	PILLAR(		TileType.WALL, 		mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.OPEN, TileType.UPSTS}}), 								true, 0, "nonewall"),
+	
+	OPEN(		TileType.OPEN, 		mkArry(new int[] {0,0,0,0}, 
+	new TileType[][] {new TileType[] {TileType.BOX, TileType.DWNSTS, TileType.WALL, TileType.UPSTS, TileType.HGSTS, TileType.OPEN}}), 								true, 0, "open"),
+	
+	OPEN_BOX(	TileType.BOX, 		mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.OPEN, TileType.DWNSTS, TileType.UPSTS}}), 				true, 0, "nonebox"),
+	SOME_BOX(	TileType.BOX, 		mkArry(new int[] {0,1,1,1}, new TileType[] {TileType.BOX}, new TileType[] {TileType.OPEN, TileType.UPSTS, TileType.DWNSTS}), 	false, 0, "somebox"),
+	HALF_BOX(	TileType.BOX, 		mkArry(new int[] {0,0,1,1}, new TileType[] {TileType.BOX}, new TileType[] {TileType.OPEN, TileType.UPSTS, TileType.DWNSTS}), 	false, 0, "halfbox"),
+	CRSS_BOX(	TileType.BOX, 		mkArry(new int[] {0,1,0,1}, new TileType[] {TileType.BOX}, new TileType[] {TileType.OPEN, TileType.UPSTS, TileType.DWNSTS}), 	false, 0, "crssbox"),
+	MOST_BOX(	TileType.BOX, 		mkArry(new int[] {0,0,0,1}, new TileType[] {TileType.BOX}, new TileType[] {TileType.OPEN, TileType.UPSTS, TileType.DWNSTS}), 	false, 0, "mostbox"),
+	FULL_BOX(	TileType.BOX, 		mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.BOX}}), 													true, 0, "fullbox"),
+	
+	NONE_UP(	TileType.UPSTS, 	mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.OPEN, TileType.DWNSTS}}), 								true, 0, "noneup"),
+	SOME_UP(	TileType.UPSTS, 	mkArry(new int[] {0,0,0,1}, new TileType[] {TileType.BOX, TileType.UPSTS}, new TileType[] {TileType.OPEN, TileType.DWNSTS}), 	false, 0, "someup"),
+	HALF_UP(	TileType.UPSTS, 	mkArry(new int[] {0,0,1,1}, new TileType[] {TileType.BOX, TileType.UPSTS}, new TileType[] {TileType.OPEN, TileType.DWNSTS}), 	false, 0, "halfup"),
+	CRSS_UP(	TileType.UPSTS, 	mkArry(new int[] {0,1,0,1}, new TileType[] {TileType.BOX, TileType.UPSTS}, new TileType[] {TileType.OPEN, TileType.DWNSTS}), 	false, 0, "crssup"),
+	MOST_UP(	TileType.UPSTS, 	mkArry(new int[] {0,1,1,1}, new TileType[] {TileType.BOX, TileType.UPSTS}, new TileType[] {TileType.OPEN, TileType.DWNSTS}), 	false, 0, "mostup"),
+	FULL_UP(	TileType.UPSTS, 	mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.OPEN, TileType.DWNSTS}}), 								true, 0, "fullup"),
+	
+	DOWN(		TileType.DWNSTS, 	mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.OPEN, TileType.DWNSTS, TileType.UPSTS, TileType.BOX}}), 	true, 0, "down"),
+	
+	NONE_HGS(	TileType.HGSTS, 	mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.BOX, TileType.OPEN}}), 									true, 0, "nonehgs"),
+	SOME_HGS(	TileType.HGSTS, 	mkArry(new int[] {0,0,1,0}, new TileType[] {TileType.OPEN}, new TileType[] {TileType.HGBOX, TileType.HGSTS}), 					false, 0, "strthgs"),
+	HALF_HGS(	TileType.HGSTS, 	mkArry(new int[] {0,0,1,1}, new TileType[] {TileType.OPEN}, new TileType[] {TileType.HGBOX, TileType.HGSTS}), 					false, 0, "halfhgs"),
+	CRSS_HGS(	TileType.HGSTS, 	mkArry(new int[] {0,1,0,1}, new TileType[] {TileType.OPEN}, new TileType[] {TileType.HGBOX, TileType.HGSTS}), 					false, 0, "crsshgs"),
+	MOST_HGS(	TileType.HGSTS, 	mkArry(new int[] {0,1,1,1}, new TileType[] {TileType.OPEN}, new TileType[] {TileType.HGBOX, TileType.HGSTS}), 					false, 0, "strthgs"),
+	FULL_HGS(	TileType.HGSTS, 	mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.HGBOX, TileType.HGSTS}}), 								true, 0, "fullhgs"),
+	
+	NONE_HGBOX( TileType.HGBOX, 	mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.HGSTS, TileType.HGWALL}}), 								true, 3, "nonebox"),
+	SOME_HGBOX(	TileType.HGBOX, 	mkArry(new int[] {1,0,0,0}, new TileType[] {TileType.HGSTS, TileType.HGWALL}, new TileType[] {TileType.HGBOX}), 				false, 3, "somebox"),
+	HALF_HGBOX(	TileType.HGBOX, 	mkArry(new int[] {1,1,0,0}, new TileType[] {TileType.HGSTS, TileType.HGWALL}, new TileType[] {TileType.HGBOX}), 				false, 3, "halfbox"),
+	CRSS_HGBOX(	TileType.HGBOX, 	mkArry(new int[] {1,0,1,0}, new TileType[] {TileType.HGSTS, TileType.HGWALL}, new TileType[] {TileType.HGBOX}), 				false, 3, "crssbox"),
+	MOST_HGBOX(	TileType.HGBOX, 	mkArry(new int[] {1,1,1,0}, new TileType[] {TileType.HGSTS, TileType.HGWALL}, new TileType[] {TileType.HGBOX}), 				false, 3, "mostbox"),
+	FULL_HGBOX(	TileType.HGBOX, 	mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.HGBOX}}), 												true, 3, "fullbox"),
+	
+	NONE_HGWALL(TileType.HGWALL, 	mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.HGSTS, TileType.HGBOX}}), 								true, 3, "nonewall"),
+	SOME_HGWALL(TileType.HGWALL, 	mkArry(new int[] {1,0,0,0}, new TileType[] {TileType.HGSTS, TileType.HGBOX}, new TileType[] {TileType.HGWALL}), 				false, 3, "somewall"),
+	HALF_HGWALL(TileType.HGWALL, 	mkArry(new int[] {1,1,0,0}, new TileType[] {TileType.HGSTS, TileType.HGBOX}, new TileType[] {TileType.HGWALL}), 				false, 3, "halfwall"),
+	CRSS_HGWALL(TileType.HGWALL, 	mkArry(new int[] {1,0,1,0}, new TileType[] {TileType.HGSTS, TileType.HGBOX}, new TileType[] {TileType.HGWALL}), 				false, 3, "crsswall"),
+	MOST_HGWALL(TileType.HGWALL, 	mkArry(new int[] {1,1,1,0}, new TileType[] {TileType.HGSTS, TileType.HGBOX}, new TileType[] {TileType.HGWALL}), 				false, 3, "mostwall"),
+	FULL_HGWALL(TileType.HGWALL, 	mkArry(new int[] {0,0,0,0}, new TileType[][] {new TileType[] {TileType.HGWALL}}), 												true, 3, "fullwall");
 	
 	public final TileType[][] frm;
 	public final boolean rndmRtt;
 	public final TileType org;
-	public final String schm;
+	public final String[] schms;
+	public final int dY;
 	
-	private TileSet(final TileType org, final TileType[][] frm, final String schm, final boolean rndmRtt) {
+	private TileSet(final TileType org, final TileType[][] frm, final boolean rndmRtt, final int dY, final String... schms) {
 		this.rndmRtt = rndmRtt;
-		this.schm = schm;
+		this.schms = schms;
 		this.frm = frm;
 		this.org = org;
+		this.dY = dY;
 	}
 	
 	private static TileType[][] mkArry(final int[] which, final TileType[]... tps) {

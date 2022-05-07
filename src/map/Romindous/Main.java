@@ -27,7 +27,7 @@ public class Main extends JavaPlugin implements Listener {
 	public static final SecureRandom sr = new SecureRandom();
 	public static final ItemStack air = new ItemStack(Material.AIR);
 	public static final WorldEdit wep = WorldEdit.getInstance();
-	public static final MapBuilder mbd = new MapBuilder("map", BlockVector3.at(9, 3, 12), BlockVector3.at(5, 5, 5));
+	public static final MapBuilder mbd = new MapBuilder("map", BlockVector3.at(21, 1, 28), BlockVector3.at(5, 8, 5), false);
 	public static EditSession ess;
 	
 	public void onEnable() {
