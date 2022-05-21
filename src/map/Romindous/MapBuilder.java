@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 
 import com.sk89q.worldedit.EditSession;
@@ -21,31 +22,55 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
 import com.sk89q.worldedit.function.operation.Operations;
+import com.sk89q.worldedit.math.BlockVector2;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.math.transform.AffineTransform;
+import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.session.ClipboardHolder;
 
 import map.Romindous.Enums.TileSet;
 import map.Romindous.Enums.TileType;
+import net.minecraft.core.BaseBlockPosition;
 
 public class MapBuilder {
 	
 	public final String nm;
-	public boolean ceil;
+	private boolean ceiling;//is there ceiling on top floor?
+	private Material ceilMat;
+	private BlockVector3 origin;//the start block for the entire map (most negative X and Z)
 	private BlockVector3 mapDims;
 	private BlockVector3 cellDims;
-	
+//	private static final IBlockData air = 
+//		net.minecraft.world.level.block.Block.a(PacketUtils.getNMSIt(new ItemStack(Material.AIR)).c()).n();
+	public final LinkedList<PasteSet> sets = new LinkedList<>();
+
+	public static final Material dftCeilMat = Material.SMOOTH_SANDSTONE;
+	public static final BlockVector3 dftMapDims = BlockVector3.at(15, 2, 19);
+	public static final BlockVector3 dftCellDims = BlockVector3.at(5, 8, 5);
+	private static final AffineTransform t3 = new AffineTransform().rotateY(90d), 
+		t2 = new AffineTransform().rotateY(180d), 
+		t1 = new AffineTransform().rotateY(270d);
 	public static final int maxCheckDist = TileType.getNoiseDiff();
 	public static final int encodeBits = 6;
 	
-	public MapBuilder(final String nm, final BlockVector3 mapDims, final BlockVector3 cellDims, final boolean ceil) {
+	public MapBuilder(final String nm) {
+		this.nm = nm;
+		this.mapDims = dftMapDims;
+		this.cellDims = dftCellDims;
+		this.ceiling = false;
+		this.ceilMat = dftCeilMat;
+	}
+	
+	public MapBuilder(final String nm, final BlockVector3 mapDims, final BlockVector3 cellDims, final Material ceil) {
 		this.nm = nm;
 		this.mapDims = mapDims;
 		this.cellDims = cellDims;
+		this.ceiling = ceil != null;
+		this.ceilMat = ceiling ? ceil : dftCeilMat;
 	}
 	
-	public void setCeiling(final boolean ceil) {
-		this.ceil = ceil;
+	public void setCeiling(final Material ceil) {
+		this.ceilMat = ceil;
 	}
 	
 	public void setMapDims(final int x, final int y, final int z) {
@@ -56,35 +81,59 @@ public class MapBuilder {
 		cellDims = BlockVector3.at(x, y, z);
 	}
 	
-	public boolean build(final Location cntr) {
-		final int dX = mapDims.getX(), dZ = mapDims.getZ();
-		final Location loc = cntr.subtract(dX * cellDims.getX() / 2, 0d, dZ * cellDims.getZ() / 2);
-		int[] uts = new int[0];
-		for (int f = 0; f < mapDims.getY(); f++) {
-			final HashMap<Integer, TileType> tls = new HashMap<Integer, TileType>();
-			for (final int c : uts) {
-				tls.put(c, TileType.DWNSTS);
-			}
-			uts = buildFloor(dX, dZ, loc, tls, f == mapDims.getY() - 1, Material.SMOOTH_SANDSTONE);
-			loc.add(0d, cellDims.getY(), 0d);
-		}
-		return true;
+	public BlockVector3 getMapDims() {
+		return mapDims;
 	}
 	
-	private int[] buildFloor(final int lenX, final int widZ, final Location loc, final HashMap<Integer, TileType> tiles, final boolean isTopFloor, final Material ceiling) {
+	public BlockVector3 getCellDims() {
+		return cellDims;
+	}
+	
+	public BlockVector3 getOrigin() {
+		return origin;
+	}
+	
+	public void build(final Location cntr, final HashMap<Integer, TileType> tiles) {
+		final int dX = mapDims.getX(), dZ = mapDims.getZ();
+		final Location loc = cntr.clone().subtract(dX * cellDims.getX() >> 1, 0d, dZ * cellDims.getZ() >> 1);
+		origin = BukkitAdapter.asBlockVector(loc);
+//		final World w = loc.getWorld();
+//		final Chunk ch = loc.getChunk();
+//		for (int x = (Math.abs(loc.getBlockX() - cntr.getBlockX()) >> 4) * 2; x >= 0; x --) {
+//			for (int z = (Math.abs(loc.getBlockX() - cntr.getBlockX()) >> 4) * 2; x >= 0; x --) {
+//				final CompletableFuture<Chunk> cf = w.getChunkAtAsyncUrgently(ch.getX() + x, ch.getZ() + z);
+//				cf.thenRun(() -> {
+//					try {
+//						cf.get().load(false);
+//					} catch (InterruptedException | ExecutionException e) {
+//						e.printStackTrace();
+//					}
+//				});
+//			}
+//		}
+		
+		Bukkit.getScheduler().runTaskAsynchronously(Main.plug, () -> {
+			int[] uts = new int[0];
+			Bukkit.getConsoleSender().sendMessage("Generating " + mapDims.getY() + " floors");
+			for (int f = 0; f < mapDims.getY(); f++) {
+				final HashMap<Integer, TileType> tls = new HashMap<Integer, TileType>();
+				if (!tiles.isEmpty()) {
+					tls.putAll(tiles);
+					tiles.clear();
+				}
+				for (final int c : uts) {
+					tls.put(c, TileType.DWNSTS);
+				}
+				uts = buildFloor(dX, dZ, origin.add(0, cellDims.getY() * f, 0), tls, f == mapDims.getY() - 1, loc.getWorld());
+			}
+		});
+	}
+	
+	private int[] buildFloor(final int lenX, final int widZ, final BlockVector3 org, final HashMap<Integer, TileType> tiles, final boolean isTopFloor, final World w) {
 		final LinkedList<Integer> cells = new LinkedList<>();
 		for (int x = 0; x < lenX; x++) {
 			for (int z = 0; z < widZ; z++) {
 				cells.add(encd(x, z));
-				final Block b = loc.clone().add(x * 5, cellDims.getY() - 1, z * 5).getBlock();
-				//ceiling
-				if (this.ceil) {
-					for (int xx = 0; xx < cellDims.getX(); xx++) {
-						for (int zz = 0; zz < cellDims.getZ(); zz++) {
-							b.getRelative(xx, 0, zz).setType(ceiling);
-						}
-					}
-				}
 				//presets
 				if (x == 0 || x == lenX - 1) {
 					tiles.put(encd(x, z), TileType.WALL);
@@ -103,7 +152,7 @@ public class MapBuilder {
 			upStairCords = new int[0];
 		} else {
 			while (true) {
-				final int ux = Main.sRnd.nextInt(lenX >> 2) + 1, uz = Main.sRnd.nextInt(widZ >> 2) + 1;
+				final int ux = Main.sRnd.nextInt(lenX >> 3) + 1, uz = Main.sRnd.nextInt(widZ >> 3) + 1;
 				if (tiles.get(encd((lenX >> 1) + ux, (widZ >> 1) + uz)) != null) continue;
 				if (lenX * widZ > 160) {
 					upStairCords = new int[] {
@@ -114,8 +163,8 @@ public class MapBuilder {
 					};
 				} else {
 					upStairCords = new int[] {
-						encd((lenX >> 1) - ux, (widZ >> 1) + uz),
-						encd((lenX >> 1) + ux, (widZ >> 1) - uz)
+						encd((lenX >> 1) + ux, (widZ >> 1) + uz),
+						encd((lenX >> 1) - ux, (widZ >> 1) - uz)
 					};
 				}
 				for (final int c : upStairCords) {
@@ -152,18 +201,17 @@ public class MapBuilder {
 			//Bukkit.getConsoleSender().sendMessage("final-" + tt.toString());
 			tiles.put(coords, (TileType) rndElmt(possible.toArray()));
 		}
-		
-		final EditSession session = Main.WEPlugin.newEditSessionBuilder().world(BukkitAdapter.adapt(loc.getWorld())).maxBlocks(-1).build();
-		session.enableStandardMode();
 		for (final Integer in : tiles.keySet()) {
 			final int z = in >> encodeBits, x = in - (z << encodeBits);
-			pasteSet(x, z, tiles, loc.clone(), session);
+			//Bukkit.getConsoleSender().sendMessage("x-" + x + "z-" + z);
+			pasteSet(x, z, tiles, org);
 		}
-		session.close();
+		Bukkit.getConsoleSender().sendMessage("Done async generating a floor");
+		
 		return upStairCords;
 	}
 
-	public void pasteSet(final int X, final int Z, final HashMap<Integer, TileType> tiles, final Location origin, final EditSession session) {
+	public void pasteSet(final int X, final int Z, final HashMap<Integer, TileType> tiles, final BlockVector3 org) {
 		final TileType[] around = new TileType[4];
 		TileType tile = tiles.get(encd(X + 1, Z));
 		around[0] = tile == null ? TileType.OPEN : tile;
@@ -174,14 +222,14 @@ public class MapBuilder {
 		tile = tiles.get(encd(X, Z - 1));
 		around[3] = tile == null ? TileType.OPEN : tile;
 		
-		placeRotateSet(tiles.get(encd(X, Z)), around, origin.add(X * cellDims.getX(), 0d, Z * cellDims.getZ()), session);
+		placeRotateSet(tiles.get(encd(X, Z)), around, org.add(X * cellDims.getX(), 0, Z * cellDims.getZ()));
 	}
 
-	private void placeRotateSet(final TileType tile, final TileType[] around, final Location loc, final EditSession session) {
+	private void placeRotateSet(final TileType tile, final TileType[] around, final BlockVector3 loc) {
 		for (final TileSet set : TileSet.values()) {//for every set
 			if (set.original == tile) {
 				final int ln = around.length;//usually 4
-				sts : for (int rotation = 0; rotation < ln; rotation++) {//for every possible rotation
+				sts : for (int rot = 0; rot < ln; rot++) {//for every possible rotation
 					for (int j = 0; j < ln; j++) {//check if array matches set
 						if (!arrayContains(set.form[j], around[j])) {//rotate by 1 if not
 							final TileType first_Last = around[0];
@@ -193,13 +241,124 @@ public class MapBuilder {
 						}
 					}
 					//getServer().getConsoleSender().sendMessage("\nloc-" + loc.toString() + ",\nType-" + tt.toString() + ", Set-" + ts.toString() + ", Rot-" + i);
-					placeWESet(set, set.rotateRnd ? Main.sRnd.nextInt(4) : rotation, loc, session);
+					//Bukkit.getConsoleSender().sendMessage("added set " + set.toString());
+					sets.add(new PasteSet(set, (byte) (set.rotateRnd ? Main.sRnd.nextInt(4) : rot), BlockVector3.at(loc.getX(), loc.getY(), loc.getZ())));
 					return;
 				}
 			}
 		}
-		Bukkit.getConsoleSender().sendMessage("loc-" + loc.toString() + ",\nType-" + tile.toString() + " not placed");
+		//Bukkit.getConsoleSender().sendMessage("loc-" + loc.toString() + ",\nType-" + tile.toString() + " not placed");
 		//placeWESet(TileSet.OPEN, 0, loc, ess);
+	}
+
+	public void remove(final World w, final int i) {
+		final BlockVector3 lm = mapDims.multiply(cellDims);
+		for (int x = lm.getX(); x >= 0; x--) {
+			for (int y = lm.getY(); y >= 0; y--) {
+				for (int z = lm.getZ(); z >= 0; z--) {
+					w.getBlockAt(origin.getX() + x, origin.getY() + y - 1, origin.getZ() + z).setType(Material.AIR, false);
+				}
+			}
+		}
+		//failsafe
+		Bukkit.getScheduler().runTaskLater(Main.plug, () -> {
+			if (w.getHighestBlockYAt(0, 0) > 0 && i != 0) {
+				Bukkit.getConsoleSender().sendMessage("couldnt remove arena form " + origin.toString() + " trying again");
+				remove(w, i - 1);
+			}
+		}, 10);
+	}
+	
+	public void placeSets(final World w, final BaseBlockPosition A, final int trs) {
+		final HashMap<String, Clipboard> clips = new HashMap<>();
+		final EditSession session = Main.WEPlugin.newEditSessionBuilder().world(BukkitAdapter.adapt(w)).maxBlocks(-1).build();
+		final int cX = cellDims.getX(), cZ = cellDims.getZ();
+		session.enableStandardMode();
+		
+		//load chunkssssss
+		for (final BlockVector2 ch : new CuboidRegion(origin, origin.add(mapDims.multiply(cellDims))).getChunks()) {
+			w.getChunkAt(ch.getX(), ch.getZ()).load();
+		}
+		
+		//ceiling
+		for (int y = ceiling ? mapDims.getY() : mapDims.getY() - 1; y > 0; y--) {
+			final int cY = cellDims.getY() * y - 2;
+			for (int x = (cX * mapDims.getX()) - 1; x >= 0; x--) {
+				for (int z = (cZ * mapDims.getZ()) - 1; z >= 0; z--) {
+					w.getBlockAt(origin.getX() + x, origin.getY() + cY, origin.getZ() + z).setType(ceilMat, false);
+				}
+			}
+		}
+		
+		for (final PasteSet set : sets) {
+			try {
+				final Block b = w.getBlockAt(set.loc.getX(), set.loc.getY(), set.loc.getZ());
+				for (int y = set.ts.height - 1; y >= 0; y--) {
+					for (int x = 0; x < cX; x++) {
+						for (int z = 0; z < cZ; z++) {
+							b.getRelative(x,y,z).setType(set.ts.original.floorMat);
+						}
+					}
+				}
+				final String sch = rndElmt(set.ts.schems);
+				final Clipboard clip;
+				if (clips.containsKey(sch)) {
+					clip = clips.get(sch);
+				} else {
+					final File fl = new File(Main.plug.getDataFolder() + "/schems/" + sch + ".schem");
+					if (fl.exists()) {
+						try {
+							clip = ClipboardFormats.findByFile(fl).getReader(new FileInputStream(fl)).read();
+							clips.put(sch, clip);
+						} catch (IOException e) {
+							e.printStackTrace();
+							continue;
+						}
+					} else {
+						Bukkit.getConsoleSender().sendMessage("Schem-" + fl.getName() + " doesn't exist!");
+						continue;
+					}
+				}
+				//cl.getRegion().contract(null);
+				final ClipboardHolder holder = new ClipboardHolder(clip);
+				final BlockVector3 bvc;
+				switch (set.rtt) {
+				case 3:
+					bvc = set.loc.add(0, 0, cZ - 1);
+					holder.setTransform(t3);
+					break;
+				case 2:
+					bvc = set.loc.add(cX - 1, 0, cZ - 1);
+					holder.setTransform(t2);
+					break;
+				case 1:
+					bvc = set.loc.add(cX - 1, 0, 0);
+					holder.setTransform(t1);
+					break;
+				default:
+					bvc = set.loc;
+					break;
+				}
+				Operations.complete(holder.createPaste(session).to(bvc.add(0, set.ts.height, 0)).ignoreAirBlocks(set.ts.ignrAir).build());
+			} catch (WorldEditException e) {
+				e.printStackTrace();
+			}
+		}
+
+		//failsafe
+		Bukkit.getScheduler().runTaskLater(Main.plug, () -> {
+			if (w.getHighestBlockYAt(0, 0) > 0) {
+				sets.clear();
+				clips.clear();
+				session.close();
+			} else if (trs != 0) {
+				Bukkit.getConsoleSender().sendMessage("not placed, sets n-" + sets.toString());
+				/*for (final Entry<String, Clipboard> s : clips.entrySet()) {
+					Bukkit.getConsoleSender().sendMessage("clip-" + s.getKey() + " for " + s.getValue().getRegion().getBoundingBox().toString());
+				}*/
+				placeSets(w, A, trs - 1);
+			}
+		}, 10);
 	}
 
 	private <G> boolean arrayContains(final G[] array, final G elem) {
@@ -208,53 +367,12 @@ public class MapBuilder {
 		}
 		return false;
 	}
-
-	private void placeWESet(final TileSet set, final int rotation, final Location loc, final EditSession session) {
-		final File fl = new File(Bukkit.getPluginsFolder().getAbsolutePath() + "\\WorldEdit\\schematics\\" + rndElmt(set.schems) + ".schem");
-		try {
-			if (fl.exists()) {
-				final Block b = loc.getBlock();
-				for (int y = set.height - 1; y >= 0; y--) {
-					for (int x = cellDims.getX() - 1; x >= 0; x--) {
-						for (int z = cellDims.getZ() - 1; z >= 0; z--) {
-							b.getRelative(x,y,z).setType(set.original.floorMat);
-						}
-					}
-				}
-				final Clipboard clip = ClipboardFormats.findByFile(fl).getReader(new FileInputStream(fl)).read();
-				//cl.getRegion().contract(null);
-				final ClipboardHolder holder = new ClipboardHolder(clip);
-				switch (rotation) {
-				case 3:
-					loc.add(0d, 0d, cellDims.getZ() - 1);
-					holder.setTransform(new AffineTransform().rotateY(90d));
-					break;
-				case 2:
-					loc.add(cellDims.getX() - 1, 0d, cellDims.getZ() - 1);
-					holder.setTransform(new AffineTransform().rotateY(180d));
-					break;
-				case 1:
-					loc.add(cellDims.getX() - 1, 0d, 0d);
-					holder.setTransform(new AffineTransform().rotateY(270d));
-					break;
-				default:
-					break;
-				}
-				Operations.complete(holder.createPaste(session).to(BukkitAdapter.asBlockVector(loc).add(0, set.height, 0)).ignoreAirBlocks(true).build());
-			} else {
-				Bukkit.getConsoleSender().sendMessage("loc-" + loc.toString() + ",\nType-" + set.toString() + " not placed");
-			}
-		} catch (WorldEditException | IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <G> G rndElmt(final G... arr) {
-		return arr[Main.sRnd.nextInt(arr.length)];
-	}
 	
 	public static int encd(final int x, final int z) {
 		return x + (z << encodeBits);
+	}
+
+	public static <G> G rndElmt(G[] arr) {
+		return arr[Main.sRnd.nextInt(arr.length)];
 	}
 }

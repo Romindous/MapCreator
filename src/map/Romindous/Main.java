@@ -1,6 +1,8 @@
 package map.Romindous;
 
 import java.security.SecureRandom;
+import java.util.HashMap;
+
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
@@ -13,11 +15,13 @@ import com.sk89q.worldedit.math.BlockVector3;
 
 public class Main extends JavaPlugin implements Listener {
 	
+	public static Main plug;
+	
 	public static final SecureRandom sRnd = new SecureRandom();
 	public static final WorldEdit WEPlugin = WorldEdit.getInstance();
-	public static final MapBuilder mapBuilder = new MapBuilder("map", BlockVector3.at(21, 1, 28), BlockVector3.at(5, 8, 5), false);
 	
 	public void onEnable() {
+		plug = this;
 		getServer().getPluginManager().registerEvents(this, this);
 		
 	}
@@ -30,7 +34,13 @@ public class Main extends JavaPlugin implements Listener {
 	public void onClick(final BlockPlaceEvent e) {
 		if (e.getBlock().getType() == Material.IRON_BLOCK) {
 			final Block bl = e.getBlockPlaced();
-			mapBuilder.build(bl.getLocation());
+			final MapBuilder mb = new MapBuilder("map");
+			mb.build(bl.getLocation(), new HashMap<>());
+			//usefull stuff
+			mb.getCellDims();
+			mb.getMapDims();
+			mb.getOrigin();
+			
 			//its here for now, just to demonstrate
 		}
 	}

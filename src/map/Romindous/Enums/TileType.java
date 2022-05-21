@@ -7,14 +7,14 @@ import org.bukkit.Material;
 
 public enum TileType {
 	
-	WALL(true, Material.SANDSTONE, -1, 0),
-	OPEN(true, Material.SANDSTONE, 0, 0),
-	BOX(true, Material.SANDSTONE, 1, 0),
-	UPSTS(false, Material.SANDSTONE, 1, 0),
-	DWNSTS(false, Material.SANDSTONE, 1, 0),
-	HGSTS(true, Material.SANDSTONE, 0, 1),
-	HGBOX(true, Material.SANDSTONE, 0, 2),
-	HGWALL(true, Material.SANDSTONE, 0, 3);
+	WALL(true, Material.POLISHED_ANDESITE, -1, 0),
+	OPEN(true, Material.POLISHED_ANDESITE, 0, 0),
+	BOX(true, Material.POLISHED_ANDESITE, 1, 0),
+	UPSTS(false, Material.POLISHED_ANDESITE, 1, 0),
+	DWNSTS(false, Material.POLISHED_ANDESITE, 1, 0),
+	HGSTS(true, Material.POLISHED_ANDESITE, 0, 1),
+	HGBOX(true, Material.POLISHED_ANDESITE, 0, 2),
+	HGWALL(true, Material.POLISHED_ANDESITE, 0, 3);
 	//=-=-=-=-
 	//VERY IMPORTANT - besides (0, 0), there can be no other same-number noises, like (1,1), since that will create impossible cases
 	//=-=-=-=-
